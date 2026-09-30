@@ -1,0 +1,4 @@
+project: campus_support
+services:
+  postgres: { extensions: [vector] }
+  garage: { buckets: [attachments] }
