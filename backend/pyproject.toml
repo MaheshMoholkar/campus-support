@@ -38,3 +38,6 @@ ignore = ["E501"]  # line length is the formatter's job
 [tool.pyright]
 include = ["app", "tests"]
 typeCheckingMode = "standard"
+
+[tool.ruff.lint.isort]
+known-third-party = ["alembic"]  # the local alembic/ folder is migrations, not a package
