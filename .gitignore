@@ -3,3 +3,9 @@
 !.env.example
 .code-review-graph/
 .DS_Store
+__pycache__/
+.venv/
+.pytest_cache/
+.ruff_cache/
+node_modules/
+.next/
