@@ -1,13 +1,18 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi.testclient import TestClient
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.deps import get_db
+from app.core.security import COOKIE_NAME, create_session_token
+from app.main import app as api
+from app.models import User
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -49,3 +54,28 @@ def db(engine: Engine) -> Iterator[Session]:
         session.close()
         outer.rollback()
         connection.close()
+
+
+@pytest.fixture
+def client(db: Session) -> Iterator[TestClient]:
+    def _get_db() -> Iterator[Session]:
+        # Mirrors app.core.deps.get_db: a failed request rolls back its changes.
+        try:
+            yield db
+        except Exception:
+            db.rollback()
+            raise
+
+    api.dependency_overrides[get_db] = _get_db
+    yield TestClient(api)
+    api.dependency_overrides.clear()
+
+
+@pytest.fixture
+def as_user(client: TestClient) -> Callable[[User], TestClient]:
+    def _as(user: User) -> TestClient:
+        logged_in = TestClient(api)
+        logged_in.cookies.set(COOKIE_NAME, create_session_token(user.id))
+        return logged_in
+
+    return _as
