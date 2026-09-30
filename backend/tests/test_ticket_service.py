@@ -358,3 +358,13 @@ def test_detail_has_timeline_time_and_allowed_actions(db, world):
         Action.CLOSE,
     }
     assert tickets.ticket_detail(db, w.reporter, ticket, at(50)).allowed_actions == []
+
+
+def test_bulk_assign_refuses_a_closed_ticket_already_with_that_developer(db, world):
+    w = world
+    ticket = queued_ticket(db, w)
+    act(db, w.dev, ticket, Action.START, at(20))
+    act(db, w.dev, ticket, Action.CLOSE, at(30), remark="Done")
+
+    with pytest.raises(Conflict):
+        tickets.bulk_assign(db, w.lead, [ticket.id], w.dev.id)

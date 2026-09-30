@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -14,7 +15,9 @@ class Settings(BaseSettings):
     )
 
     database_url: str
-    session_secret: str = "dev-only-secret-change-me-0123456789abcdef"
+    session_secret: str = Field(
+        min_length=32
+    )  # no default: a known secret lets anyone forge a session
     session_hours: int = 12
     cookie_secure: bool = False
     s3_endpoint: str = ""

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.enums import Role
 from app.schemas.auth import UserOut
@@ -57,6 +57,14 @@ class UserUpdate(Stripped):
     extension: str | None = Field(default=None, max_length=10)
     contact_number: str | None = Field(default=None, max_length=20)
     is_active: bool | None = None
+
+    @field_validator("name", "password", "role", "is_active")
+    @classmethod
+    def not_null(cls, value: object) -> object:
+        # These may be left out of a PATCH, but cannot be cleared.
+        if value is None:
+            raise ValueError("may be omitted but cannot be null")
+        return value
 
 
 class AdminUserOut(UserOut):

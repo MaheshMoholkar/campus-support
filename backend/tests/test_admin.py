@@ -112,3 +112,19 @@ def test_admin_cannot_lock_themself_out(as_user, world):
     assert admin.patch(url, json={"is_active": False}).status_code == 409
     assert admin.patch(url, json={"role": "lead"}).status_code == 409
     assert admin.patch(url, json={"name": "Renamed Admin"}).status_code == 200
+
+
+@pytest.mark.parametrize("field", ["name", "role", "is_active", "password"])
+def test_update_user_rejects_explicit_null_for_required_fields(as_user, world, field):
+    admin = as_user(world.admin)
+    url = f"{ADMIN}/users/{world.dev.id}"
+
+    response = admin.patch(url, json={field: None})
+
+    assert response.status_code == 422
+    unchanged = next(u for u in admin.get(f"{ADMIN}/users").json() if u["id"] == world.dev.id)
+    assert (unchanged["name"], unchanged["role"], unchanged["is_active"]) == (
+        world.dev.name,
+        "developer",
+        True,
+    )

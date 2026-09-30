@@ -14,6 +14,7 @@ Needs Postgres with pgvector and an S3-compatible bucket. With the homelab:
 ```bash
 lab up                       # writes .env.lab
 cd backend
+echo "SESSION_SECRET=$(openssl rand -hex 32)" > .env   # once; signs login cookies
 uv sync
 uv run alembic upgrade head
 uv run python -m app.seed    # invented demo data; password: campus-demo

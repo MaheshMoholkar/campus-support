@@ -251,7 +251,10 @@ def bulk_assign(
     result: list[Ticket] = []
     for ticket_id in sorted(set(ticket_ids)):  # fixed order, so row locks cannot deadlock
         ticket = get_visible_ticket(db, actor, ticket_id, lock=True)
-        if ticket.assignee_id != assignee_id:
+        if ticket.assignee_id == assignee_id:
+            # Nothing to change, but still refuse tickets that cannot be assigned at all.
+            resolve(_actor(actor), _state(ticket), Action.ASSIGN)
+        else:
             ticket = apply_action(db, actor, ticket_id, Action.ASSIGN, body, now)
         result.append(ticket)
     return result
