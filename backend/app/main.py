@@ -1,7 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
-from app.routers import auth, health
+from app.core.errors import DomainError
+from app.routers import auth, health, lookups, tickets
 
 app = FastAPI(title="Campus Support API")
-app.include_router(health.router, prefix="/api/v1")
-app.include_router(auth.router, prefix="/api/v1")
+
+
+@app.exception_handler(DomainError)
+def domain_error_handler(request: Request, exc: DomainError) -> JSONResponse:
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
+
+
+for module in (health, auth, tickets, lookups):
+    app.include_router(module.router, prefix="/api/v1")
