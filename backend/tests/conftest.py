@@ -35,6 +35,7 @@ def engine() -> Iterator[Engine]:
     config.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
     with test_engine.begin() as conn:
         config.attributes["connection"] = conn
+        config.attributes["version_table_schema"] = "test"
         command.upgrade(config, "head")
     yield test_engine
     test_engine.dispose()

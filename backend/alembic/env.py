@@ -9,7 +9,13 @@ target_metadata = Base.metadata
 
 
 def run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        # Tests keep their own version table. Without this, Alembic finds the
+        # development one through the search path and migrates nothing.
+        version_table_schema=config.attributes.get("version_table_schema"),
+    )
     with context.begin_transaction():
         context.run_migrations()
 

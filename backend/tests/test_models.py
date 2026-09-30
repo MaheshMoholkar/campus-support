@@ -39,3 +39,14 @@ def test_only_one_open_work_session_per_ticket(db):
 
     with pytest.raises(IntegrityError):
         db.flush()
+
+
+def test_tests_use_their_own_schema_not_the_development_tables(db):
+    schema, tickets_table = db.execute(
+        text("SELECT current_schema(), to_regclass('tickets')::text")
+    ).one()
+
+    assert schema == "test"
+    assert db.execute(text("SELECT to_regclass('test.tickets')")).scalar_one() is not None
+    assert tickets_table == "tickets"  # resolves inside the test schema, not public.tickets
+    assert db.execute(text("SELECT count(*) FROM users")).scalar_one() == 0
