@@ -1,13 +1,16 @@
 from collections.abc import Callable, Iterator
+from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Cookie, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.db import SessionLocal
 from app.core.enums import Role
 from app.core.security import read_session_token
 from app.models import User
+from app.services.storage import S3Storage, Storage
 
 
 def get_db() -> Iterator[Session]:
@@ -42,3 +45,15 @@ def require_roles(*roles: Role) -> Callable[[User], User]:
         return user
 
     return checker
+
+
+@lru_cache
+def _s3_storage() -> S3Storage:
+    return S3Storage(settings)
+
+
+def get_storage() -> Storage:
+    return _s3_storage()
+
+
+StorageDep = Annotated[Storage, Depends(get_storage)]

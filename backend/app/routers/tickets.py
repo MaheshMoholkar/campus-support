@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.deps import CurrentUser, DbDep, require_roles
+from app.core.deps import CurrentUser, DbDep, StorageDep, require_roles
 from app.core.enums import Action, Role, Source
 from app.models import User
 from app.schemas.tickets import (
@@ -15,7 +15,7 @@ from app.schemas.tickets import (
     TicketOut,
     TicketPage,
 )
-from app.services import tickets
+from app.services import attachments, tickets
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
@@ -23,9 +23,12 @@ LeadUser = Annotated[User, Depends(require_roles(Role.LEAD))]
 
 
 @router.post("", response_model=TicketDetail, status_code=201)
-def create_ticket(data: TicketCreate, db: DbDep, user: CurrentUser) -> TicketDetail:
+def create_ticket(
+    data: TicketCreate, db: DbDep, storage: StorageDep, user: CurrentUser
+) -> TicketDetail:
     source = Source.INTERNAL if user.role in (Role.DEVELOPER, Role.LEAD) else Source.WEB
     ticket = tickets.create_ticket(db, user, data, source)
+    attachments.attach(db, storage, user, ticket, data.attachment_keys)
     db.commit()
     return tickets.ticket_detail(db, user, ticket)
 
@@ -63,7 +66,11 @@ def apply_action(
 
 
 @router.post("/{ticket_id}/messages", response_model=TicketDetail, status_code=201)
-def add_message(ticket_id: int, data: MessageCreate, db: DbDep, user: CurrentUser) -> TicketDetail:
-    tickets.add_message(db, user, ticket_id, data.body)
+def add_message(
+    ticket_id: int, data: MessageCreate, db: DbDep, storage: StorageDep, user: CurrentUser
+) -> TicketDetail:
+    event = tickets.add_message(db, user, ticket_id, data.body)
+    ticket = tickets.get_visible_ticket(db, user, ticket_id)
+    attachments.attach(db, storage, user, ticket, data.attachment_keys, event)
     db.commit()
-    return tickets.ticket_detail(db, user, tickets.get_visible_ticket(db, user, ticket_id))
+    return tickets.ticket_detail(db, user, ticket)

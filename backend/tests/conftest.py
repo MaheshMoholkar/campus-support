@@ -9,11 +9,12 @@ from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.deps import get_db
+from app.core.deps import get_db, get_storage
 from app.core.security import COOKIE_NAME, create_session_token
 from app.main import app as api
 from app.models import User
 from tests.factories import World, make_world
+from tests.fakes import FakeStorage
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -58,7 +59,12 @@ def db(engine: Engine) -> Iterator[Session]:
 
 
 @pytest.fixture
-def client(db: Session) -> Iterator[TestClient]:
+def storage() -> FakeStorage:
+    return FakeStorage()
+
+
+@pytest.fixture
+def client(db: Session, storage: FakeStorage) -> Iterator[TestClient]:
     def _get_db() -> Iterator[Session]:
         # Mirrors app.core.deps.get_db: a failed request rolls back its changes.
         try:
@@ -68,6 +74,7 @@ def client(db: Session) -> Iterator[TestClient]:
             raise
 
     api.dependency_overrides[get_db] = _get_db
+    api.dependency_overrides[get_storage] = lambda: storage
     yield TestClient(api)
     api.dependency_overrides.clear()
 

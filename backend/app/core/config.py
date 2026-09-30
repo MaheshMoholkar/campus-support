@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     session_secret: str = "dev-only-secret-change-me-0123456789abcdef"
     session_hours: int = 12
     cookie_secure: bool = False
+    s3_endpoint: str = ""
+    s3_region: str = "garage"
+    s3_access_key_id: str = ""
+    s3_secret_access_key: str = ""
+    s3_bucket_attachments: str = ""
 
     @property
     def sqlalchemy_url(self) -> str:

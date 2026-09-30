@@ -18,6 +18,7 @@ class TicketCreate(Stripped):
     description: str = Field(min_length=10, max_length=10000)
     contact_number: str | None = Field(default=None, max_length=20)
     extension: str | None = Field(default=None, max_length=10)
+    attachment_keys: list[str] = Field(default_factory=list, max_length=5)
 
 
 class ActionBody(Stripped):
@@ -29,6 +30,7 @@ class ActionBody(Stripped):
 
 class MessageCreate(Stripped):
     body: str = Field(min_length=1, max_length=10000)
+    attachment_keys: list[str] = Field(default_factory=list, max_length=5)
 
 
 class BulkAssign(BaseModel):
