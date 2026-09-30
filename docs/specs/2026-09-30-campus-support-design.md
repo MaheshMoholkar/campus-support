@@ -7,7 +7,7 @@ Status: approved in discussion, awaiting review of this document
 
 Campus Support is a service desk for the software development cell of an invented university. Staff from any institute raise requests, a section authority approves them, a lead assigns them and developers resolve them. It is a rebuild of an older ASP.NET WebForms ticket system, with four AI features added.
 
-It is a portfolio project with two goals:
+It has two goals:
 
 1. A complete, working ticket lifecycle (raise, approve, assign, resolve, track).
 2. AI features built properly: rules where rules are enough, the LLM only when the input is ambiguous, every prediction logged, and accuracy measured by an eval set that gates CI.
