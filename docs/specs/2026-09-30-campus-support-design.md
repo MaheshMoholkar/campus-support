@@ -75,6 +75,8 @@ Rules:
 - When a ticket enters a side status it stores the status it came from in `previous_status`; the reporter's reply returns it there.
 - The timer stops automatically when a ticket leaves In Process for any reason (side status, reassign, close).
 - Anyone who can see a ticket can post a message on it while it is not final.
+- A reply may carry attachments, the same way a message can (for example clearer images after Poor Quality Images). No other action takes attachments.
+- A ticket in a side status cannot be reassigned; the lead reassigns after the reporter replies.
 - All transitions are defined in one table in code, keyed by (current status, action, role). Anything not in the table is rejected. This is the only place status changes happen.
 
 ## 4. Data model
@@ -157,7 +159,7 @@ All routes are under `/api/v1`.
 |---|---|
 | Auth | `POST auth/login`, `POST auth/logout`, `GET auth/me` |
 | Tickets | `POST tickets`, `GET tickets` (filters: institute, ticket_for, type, status, assignee, mine), `GET tickets/{id}` |
-| Actions | `POST tickets/{id}/actions/{action}`: every transition in section 3.2 uses this one shape, with a body for remark, assignee or reason |
+| Actions | `POST tickets/{id}/actions/{action}`: every transition in section 3.2 uses this one shape, with a body for remark, assignee, estimate or reason, and attachment keys on a reply |
 | Thread | `POST tickets/{id}/messages` |
 | Attachments | `POST attachments/presign`, then attach by key on ticket or message creation |
 | Bulk | `POST tickets/bulk-assign` |

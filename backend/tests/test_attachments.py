@@ -85,6 +85,7 @@ def test_attach_rejects_bad_keys(as_user, world, storage):
     )
     six = [uploaded(reporter, storage) for _ in range(6)]
     twice = uploaded(reporter, storage)
+    traversal = storage.put(f"uploads/{world.reporter.id}/../{world.other_reporter.id}/photo.png")
 
     for keys in (
         [someone_elses],
@@ -94,6 +95,7 @@ def test_attach_rejects_bad_keys(as_user, world, storage):
         [used],
         six,
         [twice, twice],
+        [traversal],
     ):
         response = reporter.post(f"{API}/tickets", json=ticket_values(world, attachment_keys=keys))
         assert response.status_code == 422, keys
@@ -115,3 +117,40 @@ def test_download_redirects_viewers_and_hides_from_others(as_user, world, storag
     assert allowed.headers["location"] == f"https://fake.storage/get/{key}"
     assert as_user(world.other_reporter).get(url, follow_redirects=False).status_code == 404
     assert reporter.get(f"{API}/attachments/999999/download").status_code == 404
+
+
+def test_reply_can_carry_attachments(as_user, world, storage):
+    reporter, approver = as_user(world.reporter), as_user(world.approver)
+    ticket_id = reporter.post(f"{API}/tickets", json=ticket_values(world)).json()["id"]
+    actions = f"{API}/tickets/{ticket_id}/actions"
+    asked = approver.post(
+        f"{actions}/request_info",
+        json={"side_status": "poor_quality_images", "remark": "Screenshot is unreadable"},
+    )
+    assert asked.status_code == 200
+    key = uploaded(reporter, storage, file_name="clearer.png")
+
+    detail = reporter.post(
+        f"{actions}/reply", json={"remark": "A clearer one.", "attachment_keys": [key]}
+    ).json()
+
+    assert detail["status"] == "pending_for_approval"
+    assert detail["events"][-1]["event_type"] == "status_change"
+    assert detail["attachments"][0]["event_id"] == detail["events"][-1]["id"]
+
+
+def test_attachments_are_refused_on_other_actions(as_user, world, storage):
+    approver = as_user(world.approver)
+    ticket_id = (
+        as_user(world.reporter).post(f"{API}/tickets", json=ticket_values(world)).json()["id"]
+    )
+    key = uploaded(approver, storage)
+
+    response = approver.post(
+        f"{API}/tickets/{ticket_id}/actions/approve",
+        json={"remark": "Approved", "attachment_keys": [key]},
+    )
+
+    assert response.status_code == 422
+    detail = approver.get(f"{API}/tickets/{ticket_id}").json()
+    assert (detail["status"], detail["attachments"]) == ("pending_for_approval", [])

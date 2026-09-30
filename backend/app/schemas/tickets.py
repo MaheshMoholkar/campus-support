@@ -26,6 +26,7 @@ class ActionBody(Stripped):
     side_status: Status | None = None
     assignee_id: int | None = None
     estimate_minutes: int | None = Field(default=None, ge=1, le=43200)
+    attachment_keys: list[str] = Field(default_factory=list, max_length=5)
 
 
 class MessageCreate(Stripped):

@@ -64,7 +64,7 @@ def attach(
         raise Invalid("The same file is listed twice")
     created: list[Attachment] = []
     for key in keys:
-        if not key.startswith(f"uploads/{actor.id}/"):
+        if not re.fullmatch(rf"uploads/{actor.id}/[0-9a-f]{{32}}/[A-Za-z0-9._-]{{1,100}}", key):
             raise Invalid("Unknown attachment")
         stored = storage.head(key)
         if stored is None:

@@ -1,10 +1,12 @@
 import re
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from app.core.enums import Role
+from app.main import app as api
 from app.models import WorkSession, utcnow
 from tests.factories import make_ticket_row, make_user
 
@@ -42,11 +44,23 @@ def test_only_one_open_work_session_per_ticket(db):
 
 
 def test_tests_use_their_own_schema_not_the_development_tables(db):
-    schema, tickets_table = db.execute(
-        text("SELECT current_schema(), to_regclass('tickets')::text")
-    ).one()
-
-    assert schema == "test"
+    assert db.execute(text("SELECT current_schema()")).scalar_one() == "test"
     assert db.execute(text("SELECT to_regclass('test.tickets')")).scalar_one() is not None
-    assert tickets_table == "tickets"  # resolves inside the test schema, not public.tickets
     assert db.execute(text("SELECT count(*) FROM users")).scalar_one() == 0
+
+
+def test_vector_extension_lives_in_public_so_dropping_the_test_schema_keeps_it(db):
+    schema = db.execute(
+        text(
+            "SELECT n.nspname FROM pg_extension e "
+            "JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'vector'"
+        )
+    ).scalar_one()
+
+    assert schema == "public"
+
+
+def test_database_routes_fail_loudly_without_the_client_fixture():
+    # Without the fixture the app would open its own session on the development tables.
+    with pytest.raises(RuntimeError, match="client fixture"):
+        TestClient(api).post("/api/v1/auth/login", json={"email": "a@b.example", "password": "x"})

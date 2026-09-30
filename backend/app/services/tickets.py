@@ -229,13 +229,23 @@ def add_message(
     db: Session, actor: User, ticket_id: int, body: str, now: datetime | None = None
 ) -> TicketEvent:
     now = now or _now()
-    ticket = get_visible_ticket(db, actor, ticket_id)
+    ticket = get_visible_ticket(db, actor, ticket_id, lock=True)
     if ticket.status in FINAL_STATUSES:
         raise Conflict("This ticket is closed; no more messages can be added")
     event = _record(db, ticket, actor, EventType.MESSAGE, now, body=body)
     ticket.updated_at = now
     db.flush()
     return event
+
+
+def latest_event(db: Session, ticket_id: int) -> TicketEvent:
+    """The newest timeline entry of a ticket (the one an action just recorded)."""
+    return db.execute(
+        select(TicketEvent)
+        .where(TicketEvent.ticket_id == ticket_id)
+        .order_by(TicketEvent.id.desc())
+        .limit(1)
+    ).scalar_one()
 
 
 def bulk_assign(

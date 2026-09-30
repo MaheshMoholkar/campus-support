@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.core.deps import CurrentUser, DbDep, StorageDep, require_roles
 from app.core.enums import Action, Role, Source
+from app.core.errors import Invalid
 from app.models import User
 from app.schemas.tickets import (
     ActionBody,
@@ -58,9 +59,19 @@ def get_ticket(ticket_id: int, db: DbDep, user: CurrentUser) -> TicketDetail:
 
 @router.post("/{ticket_id}/actions/{action}", response_model=TicketDetail)
 def apply_action(
-    ticket_id: int, action: Action, body: ActionBody, db: DbDep, user: CurrentUser
+    ticket_id: int,
+    action: Action,
+    body: ActionBody,
+    db: DbDep,
+    storage: StorageDep,
+    user: CurrentUser,
 ) -> TicketDetail:
+    if body.attachment_keys and action is not Action.REPLY:
+        raise Invalid("Attachments can be sent with a reply or a message only")
     ticket = tickets.apply_action(db, user, ticket_id, action, body)
+    if body.attachment_keys:
+        event = tickets.latest_event(db, ticket.id)
+        attachments.attach(db, storage, user, ticket, body.attachment_keys, event)
     db.commit()
     return tickets.ticket_detail(db, user, ticket)
 

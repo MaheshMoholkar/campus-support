@@ -59,6 +59,17 @@ def db(engine: Engine) -> Iterator[Session]:
         connection.close()
 
 
+@pytest.fixture(autouse=True)
+def _no_database_without_client_fixture() -> Iterator[None]:
+    def _refuse() -> Iterator[Session]:
+        raise RuntimeError("This test uses a database route: request the client fixture")
+        yield  # pragma: no cover
+
+    api.dependency_overrides[get_db] = _refuse
+    yield
+    api.dependency_overrides.clear()
+
+
 @pytest.fixture
 def storage() -> FakeStorage:
     return FakeStorage()
