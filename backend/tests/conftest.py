@@ -13,6 +13,7 @@ from app.core.deps import get_db
 from app.core.security import COOKIE_NAME, create_session_token
 from app.main import app as api
 from app.models import User
+from tests.factories import World, make_world
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -79,3 +80,8 @@ def as_user(client: TestClient) -> Callable[[User], TestClient]:
         return logged_in
 
     return _as
+
+
+@pytest.fixture
+def world(db: Session) -> World:
+    return make_world(db)
