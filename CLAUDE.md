@@ -8,7 +8,7 @@ Service desk for a university's software cell (raise → approve → assign → 
 - No multi-agent fan-outs unless asked. One reviewer at the end of a milestone is fine.
 - He is a .NET/React developer; Python, FastAPI and Next.js are newer to him. Explain a non-obvious choice in a line (Alembic ≈ EF migrations, Depends ≈ DI, Pydantic ≈ DTO + validation).
 - Infrastructure (homelab, lab project names, databases on the mini) is his: propose, do not rename or destroy. Ask before creating anything outside this repo.
-- Public text (README, repo description, docs) is written in the product's own terms: what it does and how. No "portfolio", no origin story, no hedging. `MaheshMoholkar/echo`'s README is the reference register.
+- Public text (README, repo description, docs) is written in the product's own terms: what it does and how. No "portfolio", no origin story, no hedging, no bold marketing tagline. `MaheshMoholkar/meet-ai`'s README is the reference layout.
 
 ## Conventions
 
@@ -16,7 +16,7 @@ Service desk for a university's software cell (raise → approve → assign → 
 - `app/services/transitions.py` is the only place a status changes: `(status, action) → rule with a guard`. Missing row → 409, failed guard → 403, hidden ticket → 404.
 - `ticket_events` is append-only. Enum columns are plain `VARCHAR` holding the enum value.
 - TDD: failing test first, watch it fail, then the code. Table-driven tests for the transition table.
-- One commit per plan task, on a branch; merge through a PR once CI is green.
+- One commit per plan task, directly on `main` (no feature branches or PRs). Commit only when asked; push only when asked.
 - All data is synthetic. The screenshots of the old system on the Desktop hold real names, phones and emails: read for layout only, copy nothing.
 
 ## Commands (in `backend/`)
